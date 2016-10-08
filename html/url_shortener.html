@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="assets/css/admin.css">
 </head>
 <body>
-<script src="http://www.w3school.com.cn/jquery/jquery-1.11.1.min.js"></script>
+<script src="http://cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
 <script src="http://cdn.amazeui.org/amazeui/2.7.2/js/amazeui.min.js"></script>
 <script src="assets/js/app.js"></script>
 
@@ -121,15 +121,28 @@
 
 <script>
 function url_add(){
-    $.post("http://httpbin.org/post",
-    {
-      url: $("#form_url").val(),
-      expire: $("#form_expire").val()
-    },
-    function(data,status){
-      alert("数据：" + data + "\n状态：" + status);
-    }); 
+    var post_data = {
+	 url: $("#form_url").val(),
+     expire: $("#form_expire").val()
+    };
+	//alert(post_data);
+    
+	$.post(
+	'http://127.0.0.1:11801/control?fn=add',
+    post_data
+    );
 }
+
+function url_add123(){
+    $.post(
+	'http://127.0.0.1:11801/control?fn=add',
+    {
+	 url: $("#form_url").val(),
+     expire: $("#form_expire").val()
+    });
+}
+
+
 function myFunction()
 {
 alert("Hello World!");

@@ -1,0 +1,143 @@
+<!doctype html>
+<html class="no-js">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Own-url-shortener by gw1770df</title>
+  <meta name="description" content="Own-url-shortener">
+  <meta name="keywords" content="Own-url-shortener">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="Cache-Control" content="no-siteapp" />
+  <link rel="icon" type="image/png" href="assets/i/favicon.png">
+  <link rel="apple-touch-icon-precomposed" href="assets/i/app-icon72x72@2x.png">
+  <meta name="apple-mobile-web-app-title" content="Amaze UI" />
+  <link rel="stylesheet" href="http://cdn.amazeui.org/amazeui/2.7.2/css/amazeui.min.css"/>
+  <link rel="stylesheet" href="assets/css/admin.css">
+</head>
+<body>
+<script src="http://www.w3school.com.cn/jquery/jquery-1.11.1.min.js"></script>
+<script src="http://cdn.amazeui.org/amazeui/2.7.2/js/amazeui.min.js"></script>
+<script src="assets/js/app.js"></script>
+
+<header class="am-topbar am-topbar-inverse admin-header">
+  <div class="am-topbar-brand">
+    <a href="https://github.com/gw1770df/own-url-shortener"><strong>Own url shortener</strong></a>
+  </div>
+  <div class="am-topbar-brand am-fr">
+    <small>oujiayue@gmail.com</small>
+  </div>
+
+
+</header>
+
+<div class="am-cf admin-main">
+
+  <!-- content start -->
+  <div class="admin-content">
+    
+	<div>
+      <div class="am-padding">
+        <div class="am-fl"><strong class="am-text-primary am-text-lg">g1770.cc</strong></div>
+		<div class="am-u-sm-12 am-u-md-3 am-fr">
+          <div class="am-input-group am-input-group-sm">
+            <input type="text" class="am-form-field">
+          <span class="am-input-group-btn">
+            <button class="am-btn am-btn-default" type="button">搜索</button>
+          </span>
+          </div>
+        </div>
+      </div>
+     </div>
+	  
+	  <hr>
+
+      <div class="am-g">
+        <div class="am-u-sm-12">
+          <form class="am-form">
+            <table class="am-table am-table-striped am-table-hover table-main">
+              <thead>
+              <tr>
+                <th class="table-title">Url</th><th class="table-author am-hide-sm-only">短地址</th><th class="table-date am-hide-sm-only">失效日期</th><th class="table-set">操作  </th>
+              </tr>
+              </thead>
+              <tbody>
+              
+              <tr>                              
+                <td>https://word.gw1770df.cc/2016-09-25/linux/web_server/nginx-log%E8%AF%A6%E8%A7%A3/</td>
+                <td>http://g1770.cc/jj</td>
+                <td class="am-hide-sm-only">2014年9月4日 7:28:47</td>
+                <td>
+                  <div class="am-btn-toolbar">
+                    <button class="am-btn am-btn-default am-btn-xs am-text-danger am-hide-sm-only "><span class="am-icon-trash-o"></span> 删除</button>
+                  </div>
+                </td>
+              </tr>
+              
+			  
+              </tbody>
+            </table>
+            
+            <hr>
+          </form>
+        </div>
+
+<div class="am-padding am-cf">
+		<div><strong class="am-text-primary am-text-lg">添加</strong></div>
+		<hr>
+  <div class="am-u-md-8 am-u-sm-centered">
+  
+    <form class="am-form">
+      <fieldset class="am-form-set">
+        原地址：<input type="text" id="form_url" value="http://">
+		<p></p>
+        过期时间：<input type="text" id="form_expire" value="1d or 5h or 10m ">
+      </fieldset>
+      <button onclick="url_add()" class="am-btn am-btn-primary am-btn-block">ADD</button>
+    </form>
+  </div>
+</div>
+		
+      
+	  
+
+    <footer class="admin-content-footer">
+      <hr>
+      <p class="am-padding-left">© 2014 AllMobilize, Inc. Licensed under MIT license.</p>
+    </footer>
+
+  </div>
+  <!-- content end -->
+</div>
+
+<a href="#" class="am-icon-btn am-icon-th-list am-show-sm-only admin-menu" data-am-offcanvas="{target: '#admin-offcanvas'}"></a>
+
+<footer>
+  <hr>
+  <p class="am-padding-left">© 2014 AllMobilize, Inc. Licensed under MIT license.</p>
+</footer>
+
+
+
+<script>
+function url_add(){
+    $.post("http://httpbin.org/post",
+    {
+      url: $("#form_url").val(),
+      expire: $("#form_expire").val()
+    },
+    function(data,status){
+      alert("数据：" + data + "\n状态：" + status);
+    }); 
+}
+function myFunction()
+{
+alert("Hello World!");
+}
+
+</script>
+
+
+
+</body>
+</html>

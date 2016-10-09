@@ -38,7 +38,7 @@
     
 	<div>
       <div class="am-padding">
-        <div class="am-fl"><strong class="am-text-primary am-text-lg">g1770.cc</strong></div>
+        <div class="am-fl"><strong class="am-text-primary am-text-lg">{{ host }}</strong></div>
 		<div class="am-u-sm-12 am-u-md-3 am-fr">
           <div class="am-input-group am-input-group-sm">
             <input type="text" class="am-form-field">
@@ -63,17 +63,19 @@
               </thead>
               <tbody>
               
+			  {% for i in url_set %}
               <tr>                              
-                <td>https://word.gw1770df.cc/2016-09-25/linux/web_server/nginx-log%E8%AF%A6%E8%A7%A3/</td>
-                <td>http://g1770.cc/jj</td>
-                <td class="am-hide-sm-only">2014年9月4日 7:28:47</td>
+                <td>{{ i[0] }}</td>
+                <td>{{ i[1] }}</td>
+                <td class="am-hide-sm-only">{{ i[2] }}</td>
                 <td>
                   <div class="am-btn-toolbar">
-                    <button class="am-btn am-btn-default am-btn-xs am-text-danger am-hide-sm-only "><span class="am-icon-trash-o"></span> 删除</button>
+                    <button class="am-btn am-btn-default am-btn-xs am-text-danger am-hide-sm-only" onclick="uri_delete('{{ i[1] }}')"><span class="am-icon-trash-o"></span> 删除</button>
                   </div>
                 </td>
               </tr>
-              
+			  {% endfor %}
+			  
 			  
               </tbody>
             </table>
@@ -89,9 +91,33 @@
   
     <form class="am-form">
       <fieldset class="am-form-set">
-        原地址：<input type="text" id="form_url" value="http://">
+		<div class="am-input-group">
+          <span class="am-input-group-label">原地址：</span>
+            <input type="text" class="am-form-field" id="form_url" placeholder="http://">
+        </div>
+		
 		<p></p>
-        过期时间：<input type="text" id="form_expire" value="1d or 5h or 10m ">
+		<div class="am-input-group">
+          <span class="am-input-group-label">短地址：</span>
+            <input type="text" class="am-form-field" id="form_short_url" value="{{ host }}">
+		  <span class="am-input-group-label">
+		    <a href="javascript:void(0)" onclick="uri_random()">随机</a>
+		  </span>
+        </div>
+		
+		<p></p>
+		
+		<div class="am-input-group">
+          <span class="am-input-group-label">过期时间：</span>
+            <input type="text" class="am-form-field" id="form_expire" placeholder="10">
+			<span class="am-input-group-label">
+			  <select id="form_expire_unit" data-am-selected="{btnSize: 'sm'}">
+                <option value="d">天</option>
+                <option value="h">小时</option>
+              </select>
+			</span>
+        </div>
+		
       </fieldset>
       <button onclick="url_add()" class="am-btn am-btn-primary am-btn-block">ADD</button>
     </form>
@@ -110,42 +136,43 @@
   <!-- content end -->
 </div>
 
-<a href="#" class="am-icon-btn am-icon-th-list am-show-sm-only admin-menu" data-am-offcanvas="{target: '#admin-offcanvas'}"></a>
-
-<footer>
-  <hr>
-  <p class="am-padding-left">© 2014 AllMobilize, Inc. Licensed under MIT license.</p>
-</footer>
-
 
 
 <script>
 function url_add(){
     var post_data = {
 	 url: $("#form_url").val(),
-     expire: $("#form_expire").val()
+	 short_url: $("#form_short_url").val(),
+     expire: $("#form_expire").val(),
+	 expire_unit: $("#form_expire_unit").val()
     };
 	//alert(post_data);
     
 	$.post(
-	'http://127.0.0.1:11801/control?fn=add',
+	'/control?fn=add',
     post_data
     );
 }
 
-function url_add123(){
-    $.post(
-	'http://127.0.0.1:11801/control?fn=add',
-    {
-	 url: $("#form_url").val(),
-     expire: $("#form_expire").val()
-    });
+function uri_random(){
+   $.get("/control?fn=random",
+      function(data){
+        //alert("Data: " + data);
+	    $("#form_short_url").val(data);
+      });
 }
 
-
-function myFunction()
-{
-alert("Hello World!");
+function uri_delete(short_url){
+  //alert("haha");
+   var post_data = {
+	 delete: short_url
+    };
+	//alert(short_url);
+    
+	$.post(
+	'/control?fn=rem',
+    post_data
+    );
 }
 
 </script>

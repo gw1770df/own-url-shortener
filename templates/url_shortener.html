@@ -42,6 +42,33 @@ function response_check(data){
   return true;
 }
 
+function check_form_url(){
+    var url = $("#form_url").val();
+	var urlRegex = '^(?!mailto:)(?:(?:http|https|ftp)://)(?:\\S+(?::\\S*)?@)?(?:(?:(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}(?:\\.(?:[0-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))|(?:(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)(?:\\.(?:[a-z\\u00a1-\\uffff0-9]+-?)*[a-z\\u00a1-\\uffff0-9]+)*(?:\\.(?:[a-z\\u00a1-\\uffff]{2,})))|localhost)(?::\\d{2,5})?(?:(/|\\?|#)[^\\s]*)?$';
+    var re_url = RegExp(urlRegex);
+    if (re_url.test(url) != true){
+	    $("#div_form_url").addClass('am-input-group-danger');
+		return false;
+	}
+	else{
+	    $("#div_form_url").removeClass('am-input-group-danger');
+		return true;
+	}
+}
+
+function check_short_url(){
+    var url = $("#form_short_url").val();
+    var re_url = RegExp("^{{ host }}[a-zA-Z0-9]+$");
+    if (re_url.test(url) != true){
+	    $("#div_form_short_url").addClass('am-input-group-danger');
+		return false;
+	}
+	else{
+	    $("#div_form_short_url").removeClass('am-input-group-danger');
+		return true;
+	}
+}
+
 function url_add(){
     var post_data = {
         url: $("#form_url").val(),
@@ -49,27 +76,36 @@ function url_add(){
         expire: $("#form_expire").val(),
         expire_unit: $("#form_expire_unit").val()
     };
-  	
+    
+	if (check_form_url() && check_short_url()){
+	    $.post(
+            '/control?fn=add',
+            post_data,
+		    function(data){
+		        i_obj = $("#i_uri_add");
+			    button_obj = $("#b_uri_add");
+			    button_obj.removeClass("am-btn-primary");
+			    button_obj.addClass("am-btn-warning");
+		        i_obj.addClass("am-icon-spinner am-icon-spin");
+		        if (response_check(data) == true){
+			        //i_obj.removeClass("am-icon-spinner am-icon-spin");
+			        window.location.reload();  
+			    }
+				else{
+				    button_obj.removeClass("am-btn-warning");
+				    button_obj.addClass("am-btn-primary");
+				}
+			
+		    }
+		
+        );
+	}
+	else{
+	    alert("填写有误，重新检查红色输入框中内容。");
+	}
     //alert("url_add");
     
-    $.post(
-        '/control?fn=add',
-        post_data,
-		function(data){
-		    i_obj = $("#i_uri_add");
-			button_obj = $("#b_uri_add");
-			button_obj.removeClass("am-btn-primary");
-			button_obj.addClass("am-btn-warning");
-		    i_obj.addClass("am-icon-spinner am-icon-spin");
-		    if (response_check(data) == true)
-			{
-			    //i_obj.removeClass("am-icon-spinner am-icon-spin");
-			    window.location.reload();  
-			}
-			
-		}
-		
-    );
+    
 }
 
 function uri_random(){
@@ -170,15 +206,15 @@ function uri_delete(short_url, b_id){
   <div class="am-u-md-8 am-u-sm-centered">
   
       <fieldset class="am-form-set">
-		<div class="am-input-group">
+		<div class="am-input-group" id="div_form_url">
           <span class="am-input-group-label">原地址：</span>
-            <input type="text" class="am-form-field" id="form_url" placeholder="http://">
+            <input type="text" class="am-form-field" id="form_url" onblur="check_form_url()" placeholder="http://">
         </div>
 		
 		<p></p>
-		<div class="am-input-group">
+		<div class="am-input-group" id="div_form_short_url">
           <span class="am-input-group-label">短地址：</span>
-            <input type="text" class="am-form-field" id="form_short_url" value="{{ host }}">
+            <input type="text" class="am-form-field" id="form_short_url" onblur="check_short_url()" value="{{ host }}">
 		  <span class="am-input-group-label">
 		    <a href="javascript:void(0)" onclick="uri_random()"><i class="am-icon-refresh" id="i_random"></i> 随机</a>
 		  </span>
@@ -188,7 +224,7 @@ function uri_delete(short_url, b_id){
 		
 		<div class="am-input-group">
           <span class="am-input-group-label">过期时间：</span>
-            <input type="text" class="am-form-field" id="form_expire" value="10">
+            <input type="text" class="am-form-field" id="form_expire" value="30">
 			<span class="am-input-group-label">
 			  <select id="form_expire_unit" data-am-selected="{btnSize: 'sm'}">
                 <option value="d">天</option>

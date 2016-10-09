@@ -6,9 +6,11 @@ from functools import wraps
 import redis
 import _config
 from util import calc_expire_time, date_offset
+from util import check_url, check_short_url
 import random
 import string
 from collections import Counter
+import requests
 
 app = Flask(__name__)
 
@@ -49,6 +51,14 @@ def control_hub():
         expire_unit = post_get('expire_unit')
         expire_time = calc_expire_time(expire, expire_unit)
         short_uri = short_url[len(_config.host):]
+        t, msg = check_url(url)
+        if t == False:
+            return msg
+
+        t, msg = check_short_url(short_url)
+        if t == False:
+            return msg
+
         __url = r.get(short_uri)
         if __url != None:
             return 'Error: short url exist, Please retry.'

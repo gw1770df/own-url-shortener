@@ -24,6 +24,17 @@ if 'digits' in _config.short_uri_includ:
 
 CONTROL_FUN_NAME = set(['add', 'random', 'rem'])
 
+
+def requires_roles(*roles):
+    def wrapper(f):
+        @wraps(f)
+        def wrapped(*args, **kwargs):
+            if get_current_user_role() not in roles:
+                return error_response()
+            return f(*args, **kwargs)
+        return wrapped
+    return wrapper
+
 @app.route('/control', methods=['GET', 'POST'])
 def control_hub():
     fun_name = request.args.get('fn', None)
@@ -37,12 +48,14 @@ def control_hub():
         expire = post_get('expire')
         expire_unit = post_get('expire_unit')
         expire_time = calc_expire_time(expire, expire_unit)
-        if r.get(short_url):
-            return 'error:exist'
         short_uri = short_url[len(_config.host):]
+        __url = r.get(short_uri)
+        if __url != None:
+            return 'Error: short url exist, Please retry.'
         r.set(short_uri, url)
         r.expire(short_uri, expire_time)
         r.rpush(_config.uri_list_name, short_uri)
+        return 'ok'
 
     elif fun_name == 'random':
         max_try_times = 10
@@ -52,6 +65,7 @@ def control_hub():
                 print _config.host + uri
                 return _config.host + uri
             max_try_times -= 1
+        return 'Error: Please retry.'
 
     elif fun_name == 'rem':
         post_data = dict(request.form)
@@ -63,24 +77,24 @@ def control_hub():
         return 'ok'
     # except Exception, e:
     #     return Response('Error:\n%s' % e.message, 500)
-    return 'ok'
+    # return 'ok'
 
 @app.route('/')
 def root():
     uri_list = r.lrange(_config.uri_list_name, 0, r.llen(_config.uri_list_name))
     if len(uri_list) != len(set(uri_list)):
         counter_uri = Counter(uri_list)
-        r_uri = [k for k,v in counter_uri.items() if v>=2]
+        r_uri = [(k, v) for k,v in counter_uri.items() if v>=2]
         pipe = r.pipeline()
-        reduce(lambda pipe,v:pipe.lrem(_config.uri_list_name, v), r_uri, pipe)
+        reduce(lambda pipe,v:pipe.lrem(_config.uri_list_name, v[0], v[1]-1), r_uri, pipe)
         pipe.execute()
-        uri_list = r.lrange(_config.uri_list_name, 0, r.len(_config.uri_list_name))
+        uri_list = r.lrange(_config.uri_list_name, 0, r.llen(_config.uri_list_name))
     su = []
     for idx, uri in enumerate(uri_list):
         url = r.get(uri)
         short_url = _config.host + uri
         date = date_offset(r.ttl(uri))
-        su.append((url, short_url, date))
+        su.append((url, short_url, date, idx))
     print su
     return render_template('url_shortener.html', host = _config.host, url_set=su)
 
@@ -94,5 +108,5 @@ def red(uri):
 
 if __name__ == "__main__":
     app.run(port=11801,
-            debug=True)
+            debug=False)
 

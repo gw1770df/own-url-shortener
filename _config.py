@@ -10,3 +10,6 @@ uri_list_name = 'uri_list'
 # short_uri_includ = ['lower_letters', 'upper_letters', 'digits']
 short_uri_includ = ['lower_letters', 'digits']
 short_uri_length = 4
+
+
+user_list = {'admin': 'admin'}

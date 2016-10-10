@@ -1,10 +1,13 @@
-# Own-url-shortener
+## Own-url-shortener
 
 建立属于自己的url缩短服务。
 
 世面url缩短服务数不胜数，但有些不能自定义uri，能定义uri又不一定能用上心仪的，等等原因，不如搭建一个属于自己的url缩短服务。
 
-![demo](https://word.gw1770df.cc/wp-content/uploads/2016/10/own-url-shortener-demo.jpg)
+博客地址地址：[https://word.gw1770df.cc](https://word.gw1770df.cc/2016-10-09/python/%e8%87%aa%e5%b7%b1%e7%9a%84url%e7%bc%a9%e7%9f%ad%e6%9c%8d%e5%8a%a1/)
+
+### DEMO:
+![demo](https://word.gw1770df.cc/wp-content/uploads/2016/10/own-url-shortener-demo-1.jpg)
 
 ## 动机
 
@@ -23,17 +26,17 @@
 2. 一台linux服务器
 3. 安装配置好 nginx 和 redis [nginx安装教程](https://word.gw1770df.cc/2016-09-01/linux/web_server/nginx-%e5%ae%89%e8%a3%85%e9%85%8d%e7%bd%ae/)
 
-#### 解决python依赖
+### 解决python依赖
 
 > sudo pip install flask redis requests
 
 [pip安装教程](https://word.gw1770df.cc/2016-08-03/python/pip-%e5%ae%89%e8%a3%85%e4%b8%8e%e4%bd%bf%e7%94%a8/)
 
-#### 获取代码
+### 获取代码
 
 > git clone https://github.com/gw1770df/own-url-shortener.git
 
-#### 修改配置文件
+### 修改配置文件
 
 编辑配置文件 _config.py，修改为自己的配置。
 ```
@@ -103,7 +106,7 @@ server {
 [supervisor教程](https://word.gw1770df.cc/2016-08-04/linux/supervisor-%e4%bd%bf%e7%94%a8%e6%95%99%e7%a8%8b/)
 
 
-#### 尽情的使用吧
+### 尽情的使用吧
 
 ## 一些建议
 目前程序中没有添加用户认证模块，服务直接暴露在公网上可能会有一些问题，建议先使用nginx自带用户验证功能配合使用。

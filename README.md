@@ -91,7 +91,14 @@ server {
                                                                 # 设置own-url-shortener/templates文件夹的决定路径
     }
 
-    location / {
+                                                 # 下面使用两个location原因是：
+                                                 # 用于区分管理页面的请求和需要跳转的请求。
+                                                 # nginx 可以为管理页面添加用户验证功能。详见文章末尾处。
+    location = / {                               # 匹配 url为 /  管理页面
+        proxy_pass http://url_shortener;
+    }
+
+    location / {                                 # 匹配 跳转的请求
         proxy_pass http://url_shortener;
     }
 
@@ -111,3 +118,33 @@ server {
 ## 一些建议
 目前程序中没有添加用户认证模块，服务直接暴露在公网上可能会有一些问题，建议先使用nginx自带用户验证功能配合使用。
 [nginx用户验证功能配置教程](https://word.gw1770df.cc/2016-09-25/linux/web_server/nginx%E5%BA%94%E7%94%A8%E5%9C%BA%E6%99%AF/#auth)
+
+我的配置文件：
+
+```
+upstream url_shortener { 
+  server 127.0.0.1:11801 fail_timeout=0; 
+}
+
+server {
+    listen       80;
+    server_name  s.g1770.cc;
+
+    access_log  /home/www-data/log/s.g1770.cc combined;
+
+    location /assets {
+        root /home/gw1770/home/git/own-url-shortener/templates;
+    }
+
+    location = / {
+        auth_basic "Restricted";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        proxy_pass http://url_shortener;
+    }
+    location / {
+        proxy_pass http://url_shortener;
+    }
+
+}
+
+```

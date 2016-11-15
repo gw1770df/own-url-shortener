@@ -103,7 +103,11 @@ def root():
     for idx, uri in enumerate(uri_list):
         url = r.get(uri)
         short_url = _config.host + uri
-        date = date_offset(r.ttl(uri))
+        ttl = r.ttl(uri)
+        if not ttl or not url:
+            r.lrem(_config.uri_list_name, uri)
+            continue
+        date = date_offset(r.ttl(uri) or 0)
         su.append((url, short_url, date, idx))
     print su
     return render_template('url_shortener.html', host = _config.host, url_set=su)

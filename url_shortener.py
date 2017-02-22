@@ -22,10 +22,10 @@ now = lambda : int(time.time())
 __VERSION__ = '0.9.170222'
 
 def authcheck(func):
-    def _authcheck(self):
+    def _authcheck(self, *args, **kwargs):
         auth = self.request.headers.get('Authorization')
         if auth and auth_check(auth):
-            return func(self)
+            return func(self, *args, **kwargs)
         else:
             self.set_header('WWW-Authenticate', 'Basic realm=tmr')
             self.set_status(status_code=401)
@@ -33,8 +33,8 @@ def authcheck(func):
     return _authcheck
 
 class ControlSurlHandler(tornado.web.RequestHandler):
+    @authcheck
     def post(self, *args):
-        print(self.request.body)
         url = self.get_body_argument('url')
         suri = self.get_body_argument('short_url')
         suri = suri[len(_cfg.host):]
@@ -51,11 +51,13 @@ class ControlSurlHandler(tornado.web.RequestHandler):
         rdb.add(suri, url, expire)
         self.write('ok')
 
+    @authcheck
     def delete(self, suri):
         rdb.delete(suri)
 
 
 class ControlRandomeStringHandler(tornado.web.RequestHandler):
+    @authcheck
     def get(self):
         max_try_times = 10
         suri_list = rdb.list()
@@ -72,7 +74,6 @@ class MainHandler(tornado.web.RequestHandler):
     @authcheck
     def get(self):
         sl = rdb.list()
-        print(sl)
         self.render('./templates/url_shortener.html', host=_cfg.host, url_set=sl)
 
 class R302Handler(tornado.web.RequestHandler):
@@ -95,7 +96,7 @@ class OUSRedisDB(object):
     def list(self):
         suri_list = self._list()
         c = Counter(suri_list)
-        if suri_list and (c) != suri_list:
+        if suri_list and len(c) != len(suri_list):
             logging.error('Suri_list_have_repeat_items')
             for suri, v in c.items():
                 if v > 1:
@@ -115,9 +116,9 @@ class OUSRedisDB(object):
 
     def get(self, suri):
         url = self.r.get(suri)
-        if url:
+        if not url:
             self.r.lrem(self.KN_SURI, suri, 1)
-        return True
+        return url
 
     def add(self, suri, url, expire):
         suri_list = self._list()
@@ -133,13 +134,13 @@ if __name__ == '__main__':
     app = tornado.web.Application(
         [(r'/control/randomstring', ControlRandomeStringHandler),
          (r'/control/surl/(.*)', ControlSurlHandler),
+         (r'/(\w+)', R302Handler),
          (r'/', MainHandler),
-         ('r/(\w+)', R302Handler),
-         (r'/(assets/.*)', tornado.web.StaticFileHandler, {"path": '/home/gw1770/home/git/own-url-shortener/templates'}),
+         # (r'/(assets/.*)', tornado.web.StaticFileHandler, {"path": '/home/gw1770/home/git/own-url-shortener/templates'}),
          ],
     )
     r = redis.Redis(*_cfg.redis_connect_cfg)
     rdb = OUSRedisDB(r)
     tornado.log.enable_pretty_logging()
-    app.listen(8080)
+    app.listen(_cfg.server_port)
     tornado.ioloop.IOLoop().instance().start()

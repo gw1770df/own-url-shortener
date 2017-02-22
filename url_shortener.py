@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 now = lambda : int(time.time())
 
-__VERSION__ == '0.9.170222'
+__VERSION__ = '0.9.170222'
 
 def authcheck(func):
     def _authcheck(self):

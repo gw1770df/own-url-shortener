@@ -1,126 +1,145 @@
 #!/usr/bin/env python2.7
 # coding:utf-8
+from __future__ import print_function
 
-from flask import Flask, request, Response, render_template, redirect
-from functools import wraps
+import os
+import _config as _cfg
+import tornado.web
+import tornado.ioloop
+import tornado.log
 import redis
-import _config
 from util import calc_expire_time, date_offset
-from util import check_url, check_short_url
+from util import check_url, check_short_url, auth_check
 import random
-import string
 from collections import Counter
-import requests
+import logging
+import time
 
-app = Flask(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
-r = redis.Redis(*_config.redis_connect_cfg)
+now = lambda : int(time.time())
 
-URI_SEED = ''
-if 'lower_letters' in _config.short_uri_includ:
-    URI_SEED += string.ascii_lowercase
-if 'upper_letters' in _config.short_uri_includ:
-    URI_SEED += string.ascii_uppercase
-if 'digits' in _config.short_uri_includ:
-    URI_SEED += string.digits
+__VERSION__ == '0.9.170222'
 
-CONTROL_FUN_NAME = set(['add', 'random', 'rem'])
+def authcheck(func):
+    def _authcheck(self):
+        auth = self.request.headers.get('Authorization')
+        if auth and auth_check(auth):
+            return func(self)
+        else:
+            self.set_header('WWW-Authenticate', 'Basic realm=tmr')
+            self.set_status(status_code=401)
+            self.on_finish()
+    return _authcheck
 
-
-def requires_roles(*roles):
-    def wrapper(f):
-        @wraps(f)
-        def wrapped(*args, **kwargs):
-            if get_current_user_role() not in roles:
-                return error_response()
-            return f(*args, **kwargs)
-        return wrapped
-    return wrapper
-
-@app.route('/control', methods=['GET', 'POST'])
-def control_hub():
-    fun_name = request.args.get('fn', None)
-    assert fun_name, 'fun_name error'
-    assert fun_name in CONTROL_FUN_NAME, 'fun_name value error'
-    if fun_name == 'add':
-        post_data = dict(request.form)
-        post_get = lambda x : post_data[x][0].encode('utf-8')
-        url = post_get('url')
-        short_url = post_get('short_url')
-        expire = post_get('expire')
-        expire_unit = post_get('expire_unit')
-        expire_time = calc_expire_time(expire, expire_unit)
-        short_uri = short_url[len(_config.host):]
+class ControlSurlHandler(tornado.web.RequestHandler):
+    def post(self, *args):
+        print(self.request.body)
+        url = self.get_body_argument('url')
+        suri = self.get_body_argument('short_url')
+        suri = suri[len(_cfg.host):]
+        expire = calc_expire_time(self.get_body_argument('expire'),
+                         self.get_body_argument('expire_unit'))
         t, msg = check_url(url)
         if t == False:
-            return msg
+            self.write(msg)
 
-        t, msg = check_short_url(short_url)
+        t, msg = check_short_url(suri)
         if t == False:
-            return msg
+            self.write(msg)
 
-        __url = r.get(short_uri)
-        if __url != None:
-            return 'Error: short url exist, Please retry.'
-        r.set(short_uri, url)
-        r.expire(short_uri, expire_time)
-        r.rpush(_config.uri_list_name, short_uri)
-        return 'ok'
+        rdb.add(suri, url, expire)
+        self.write('ok')
 
-    elif fun_name == 'random':
+    def delete(self, suri):
+        rdb.delete(suri)
+
+
+class ControlRandomeStringHandler(tornado.web.RequestHandler):
+    def get(self):
         max_try_times = 10
+        suri_list = rdb.list()
+        suri_set = {x[0] for x in suri_list}
         while max_try_times:
-            uri = ''.join(random.sample(URI_SEED, 4))
-            if r.get(uri) == None:
-                print _config.host + uri
-                return _config.host + uri
             max_try_times -= 1
-        return 'Error: Please retry.'
+            uri = ''.join(random.sample(_cfg.URI_SEED, _cfg.short_uri_length))
+            if uri not in suri_set:
+                self.write(_cfg.host + uri)
+                return
+        self.write('Error: Please retry.')
 
-    elif fun_name == 'rem':
-        post_data = dict(request.form)
-        post_get = lambda x : post_data[x][0].encode('utf-8')
-        short_url = post_get('delete')
-        uri = short_url[len(_config.host):]
-        r.delete(uri)
-        r.lrem(_config.uri_list_name, uri)
-        return 'ok'
-    # except Exception, e:
-    #     return Response('Error:\n%s' % e.message, 500)
-    # return 'ok'
+class MainHandler(tornado.web.RequestHandler):
+    @authcheck
+    def get(self):
+        sl = rdb.list()
+        print(sl)
+        self.render('./templates/url_shortener.html', host=_cfg.host, url_set=sl)
 
-@app.route('/')
-def root():
-    uri_list = r.lrange(_config.uri_list_name, 0, r.llen(_config.uri_list_name))
-    if len(uri_list) != len(set(uri_list)):
-        counter_uri = Counter(uri_list)
-        r_uri = [(k, v) for k,v in counter_uri.items() if v>=2]
-        pipe = r.pipeline()
-        reduce(lambda pipe,v:pipe.lrem(_config.uri_list_name, v[0], v[1]-1), r_uri, pipe)
-        pipe.execute()
-        uri_list = r.lrange(_config.uri_list_name, 0, r.llen(_config.uri_list_name))
-    su = []
-    for idx, uri in enumerate(uri_list):
-        url = r.get(uri)
-        short_url = _config.host + uri
-        ttl = r.ttl(uri)
-        if not ttl or not url:
-            r.lrem(_config.uri_list_name, uri)
-            continue
-        date = date_offset(r.ttl(uri) or 0)
-        su.append((url, short_url, date, idx))
-    print su
-    return render_template('url_shortener.html', host = _config.host, url_set=su)
+class R302Handler(tornado.web.RequestHandler):
+    def get(self, suri):
+        url = rdb.get(suri)
+        if not url:
+            url = _cfg.miss_url
+        self.redirect(url)
 
-@app.route('/<uri>')
-def red(uri):
-    url = r.get(uri)
-    if url == None:
-        url = _config.miss_url
-    return redirect(url, code=302)
+class OUSRedisDB(object):
 
+    KN_SURI = _cfg.SURI_LIST_NAME
 
-if __name__ == "__main__":
-    app.run(port=11801,
-            debug=False)
+    def __init__(self, r):
+        self.r = r
 
+    def _list(self):
+        return self.r.lrange(self.KN_SURI, 0, self.r.llen(self.KN_SURI))
+
+    def list(self):
+        suri_list = self._list()
+        c = Counter(suri_list)
+        if suri_list and (c) != suri_list:
+            logging.error('Suri_list_have_repeat_items')
+            for suri, v in c.items():
+                if v > 1:
+                    logging.info('Delete_repeat_items')
+                    self.r.lrem(self.KN_SURI, suri, v-1)
+        suri_list = self._list()
+        sl = []
+        for idx, suri in enumerate(suri_list):
+            url = self.r.get(suri)
+            if url:
+                ttl = self.r.ttl(suri)
+                sl.append((suri, url, date_offset(ttl), idx, _cfg.host + suri))
+            else:
+                self.r.lrem(self.KN_SURI, suri, 1)
+                logging.info('Surl_is_timeout')
+        return sl
+
+    def get(self, suri):
+        url = self.r.get(suri)
+        if url:
+            self.r.lrem(self.KN_SURI, suri, 1)
+        return True
+
+    def add(self, suri, url, expire):
+        suri_list = self._list()
+        assert suri not in suri_list
+        self.r.rpush(self.KN_SURI, suri)
+        self.r.set(suri, url, ex=expire)
+        return True
+
+    def delete(self, suri):
+        return self.r.delete(suri), self.r.lrem(self.KN_SURI, suri)
+
+if __name__ == '__main__':
+    app = tornado.web.Application(
+        [(r'/control/randomstring', ControlRandomeStringHandler),
+         (r'/control/surl/(.*)', ControlSurlHandler),
+         (r'/', MainHandler),
+         ('r/(\w+)', R302Handler),
+         (r'/(assets/.*)', tornado.web.StaticFileHandler, {"path": '/home/gw1770/home/git/own-url-shortener/templates'}),
+         ],
+    )
+    r = redis.Redis(*_cfg.redis_connect_cfg)
+    rdb = OUSRedisDB(r)
+    tornado.log.enable_pretty_logging()
+    app.listen(8080)
+    tornado.ioloop.IOLoop().instance().start()

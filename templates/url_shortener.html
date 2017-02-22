@@ -79,7 +79,7 @@ function url_add(){
     
 	if (check_form_url() && check_short_url()){
 	    $.post(
-            '/control?fn=add',
+            '/control/surl/',
             post_data,
 		    function(data){
 		        i_obj = $("#i_uri_add");
@@ -109,7 +109,7 @@ function url_add(){
 }
 
 function uri_random(){
-    $.get("/control?fn=random",
+    $.get("/control/randomstring",
 	function(data){
 	    i_obj = $("#i_random");
 		//input_obj = $("#form_short_url");
@@ -130,18 +130,18 @@ function uri_delete(short_url, b_id){
     };
     //alert(short_url);
     
-    $.post(
-        '/control?fn=rem',
-        post_data,
-		function(data){
-		    b_obj = $(b_id);
-			b_obj.removeClass('am-icon-trash-o');
-			b_obj.addClass("am-icon-spinner am-icon-spin");
-		    if (response_check(data) == true)
-			{
-			    window.location.reload();  
-			}
-		}
+    $.ajax({
+            url: '/control/surl/' + short_url,
+            type: 'DELETE',
+            success: function(data){
+                b_obj = $(b_id);
+                b_obj.removeClass('am-icon-trash-o');
+                b_obj.addClass("am-icon-spinner am-icon-spin");
+                if (response_check(data) == true) {
+                    window.location.reload();
+                }
+            }
+        }
     );
 }
 
@@ -182,16 +182,16 @@ function uri_delete(short_url, b_id){
               
 			  {% for i in url_set %}
               <tr>                              
-                <td>{{ i[0] }}</td>
                 <td>{{ i[1] }}</td>
+                <td>{{ i[4] }}</td>
                 <td class="am-hide-sm-only">{{ i[2] }}</td>
                 <td>
                   <div class="am-btn-toolbar">
-                    <button class="am-btn am-btn-default am-btn-xs am-text-danger am-hide-sm-only" onclick="uri_delete('{{ i[1] }}', '#b_del_{{ i[3] }}')"><span class="am-icon-trash-o" id="b_del_{{ i[3] }}"></span> 删除</button>
+                    <button class="am-btn am-btn-default am-btn-xs am-text-danger am-hide-sm-only" onclick="uri_delete('{{ i[0] }}', '#b_del_{{ i[3] }}')"><span class="am-icon-trash-o" id="b_del_{{ i[3] }}"></span> 删除</button>
                   </div>
                 </td>
               </tr>
-			  {% endfor %}
+			  {% end %}
 			  
 			  
               </tbody>

@@ -4,7 +4,8 @@
 import datetime
 import re
 import requests
-from _config import host
+import base64
+from _config import host, auth_userlist
 
 HTTP_CODE_OK = [2,3]
 
@@ -34,7 +35,13 @@ def check_url(url):
     return True, 0
 
 def check_short_url(url):
-    re_url= re.compile('^%s[a-zA-Z0-9]+$' % host)
+    re_url= re.compile('^[a-zA-Z0-9]+$')
     if not re_url.match(url):
         return False, 'Error: short url:%s not legitimacy' % url
     return True, 0
+
+def auth_check(auth_string):
+    method, auth = auth_string.split(' ')
+    assert method == 'Basic'
+    auth = base64.b64decode(auth)
+    return not auth_userlist or auth in auth_userlist

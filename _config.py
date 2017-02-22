@@ -42,4 +42,4 @@ if 'lower_letters' in short_uri_includ:
 if 'upper_letters' in short_uri_includ:
     URI_SEED += string.ascii_uppercase
 if 'digits' in short_uri_includ:
-    URI_SEED += string.digitsz
+    URI_SEED += string.digits

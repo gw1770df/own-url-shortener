@@ -172,20 +172,23 @@ function uri_delete(short_url, b_id){
 
       <div class="am-g">
         <div class="am-u-sm-12">
-            <table class="am-table am-table-striped am-table-hover table-main">
+            <table class="am-table am-table-striped am-table-hover table-main am-g">
               <thead>
               <tr>
-                <th class="table-title">Url</th><th class="table-author am-hide-sm-only">短地址</th><th class="table-date am-hide-sm-only">失效日期</th><th class="table-set">操作  </th>
+                  <th class="table-title am-u-sm-6">Url</th>
+                  <th class="table-author am-hide-sm-only am-u-sm-3">短地址</th>
+                  <th class="table-date am-hide-sm-only am-u-sm-2">失效日期</th>
+                  <th class="table-set am-u-sm-1">操作</th>
               </tr>
               </thead>
               <tbody>
               
 			  {% for i in url_set %}
               <tr>                              
-                <td>{{ i[1] }}</td>
-                <td>{{ i[4] }}</td>
-                <td class="am-hide-sm-only">{{ i[2] }}</td>
-                <td>
+                <td class="am-u-sm-6 am-text-break">{{ i[1] }}</td>
+                <td class="am-u-sm-3">{{ i[4] }}</td>
+                <td class="am-u-sm-2 am-hide-sm-only">{{ i[2] }}</td>
+                <td class="am-u-sm-1">
                   <div class="am-btn-toolbar">
                     <button class="am-btn am-btn-default am-btn-xs am-text-danger am-hide-sm-only" onclick="uri_delete('{{ i[0] }}', '#b_del_{{ i[3] }}')"><span class="am-icon-trash-o" id="b_del_{{ i[3] }}"></span> 删除</button>
                   </div>

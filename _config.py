@@ -24,7 +24,7 @@ SURI_SET_NAME = 'SURI_SET'
 
 # 账户信息配置支持多个用户格式为 用户名:密码
 # 但用户配置信息不分离。
-auth_userlist = ['admin:admin']
+auth_userlist = {'admin:admin'}
 
 
 # 随机uri包含的字符 可选项：
@@ -36,13 +36,10 @@ short_uri_includ = ['lower_letters', 'digits']
 # 随机uri长度
 short_uri_length = 4
 
-# 没用
-user_list = {'admin': 'admin'}
-
 URI_SEED = ''
 if 'lower_letters' in short_uri_includ:
     URI_SEED += string.ascii_lowercase
 if 'upper_letters' in short_uri_includ:
     URI_SEED += string.ascii_uppercase
 if 'digits' in short_uri_includ:
-    URI_SEED += string.digitsz
+    URI_SEED += string.digits
